@@ -44,7 +44,7 @@ class Auction(models.Model):
         now = timezone.now()
 
         if now < self.start_date:
-            new_status = "scheduled"
+            new_status = "planned"
         elif now >= self.end_date:
             new_status = "ended"
         else:
