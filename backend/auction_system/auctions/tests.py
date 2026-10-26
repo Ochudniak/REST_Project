@@ -42,6 +42,48 @@ class AuctionApiTest(APITestCase):
 
         self.assertTrue(Auction.objects.filter(name="newauction").exists())
 
+    def test_create_future_auction(self):
+        auction = Auction.objects.create(
+            name = "newauction",
+            description =  "newdescription",
+            category = "newcategory",
+            starting_price = "200.00",
+            current_price = "200.00",
+            start_date = timezone.now() + timedelta(days=3),
+            end_date = timezone.now() + timedelta(days=5),
+            owner_id = 1,
+            status = "active"
+        )
+
+        auction.update_status()
+        auction.refresh_from_db()
+        
+        self.assertEqual(auction.status, "planned")
+        
+        self.assertTrue(Auction.objects.filter(name="newauction").exists())
+
+    def test_ended_auction(self):
+        auction = Auction.objects.create(
+            name = "newauction",
+            description =  "newdescription",
+            category = "newcategory",
+            starting_price = "200.00",
+            current_price = "200.00",
+            start_date = timezone.now() - timedelta(days=5),
+            end_date = timezone.now() - timedelta(days=2),
+            owner_id = 1,
+            status = "active"
+        )
+        
+        auction.update_status()
+        auction.refresh_from_db()
+                
+        self.assertEqual(auction.status, "ended")
+                
+        self.assertTrue(Auction.objects.filter(name="newauction").exists())
+        
+    
+
     # Test pobierania listy aukcji
     def test_get_auction_list(self):
         response = self.client.get("/api/auctions/")
