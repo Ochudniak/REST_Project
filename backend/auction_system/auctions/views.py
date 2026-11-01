@@ -87,11 +87,20 @@ class BidListCreateView(APIView):
             )
 
         # oferta za niska
-        if amount <= auction.current_price:
-            return Response(
-                {"detail": "Oferta musi być wyższa niż aktualna cena."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        has_bids = Bid.objects.filter(auction=auction).exists()
+
+        if not has_bids:
+            if auction.starting_price > amount:
+                return Response(
+                    {"detail": "Oferta niższa od ceny wywoławczej."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            if auction.current_price >= amount:
+                return Response(
+                    {"detail": "Użytkownik nie przebił największego bidu."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         bid = serializer.save(auction=auction)
 
