@@ -2,7 +2,11 @@ from datetime import timedelta
 
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
+from django.test import TransactionTestCase
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+from django.db import close_old_connections
 
 from .models import Auction, Bid
 
@@ -253,6 +257,55 @@ class BiddingTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         
+class ConcurrentBiddingTests(TransactionTestCase):
+    def setUp(self):
+        self.auction = Auction.objects.create(
+            name="BMW E90",
+            description="Test współbieżności",
+            category="motoryzacja",
+            starting_price="100.00",
+            current_price="100.00",
+            start_date=timezone.now() - timedelta(days=1),
+            end_date=timezone.now() + timedelta(days=1),
+            owner_id=1,
+            status="active",
+        )
 
+    def test_two_simultaneous_bids(self):
+        url = f"/api/auctions/{self.auction.id}/bids/"
+        barrier = Barrier(2)
 
+        def place_bid():
+            close_old_connections()
+            try:
+                client = APIClient()
+                barrier.wait(timeout=10)
+
+                response = client.post(
+                    url,
+                    {"amount": "110.00"},
+                    format="json",
+                )
+                return response.status_code
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [
+                executor.submit(place_bid)
+                for _ in range(2)
+            ]
+            results = [future.result() for future in futures]
+
+        self.auction.refresh_from_db()
+
+        self.assertEqual(sorted(results), [201, 400])
+        self.assertEqual(
+            Bid.objects.filter(auction=self.auction).count(),
+            1,
+        )
+        self.assertEqual(
+            str(self.auction.current_price),
+            "110.00",
+        )
 
