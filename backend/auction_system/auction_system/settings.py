@@ -1,3 +1,5 @@
+import os
+
 """
 Django settings for auction_system project.
 
@@ -84,8 +86,12 @@ WSGI_APPLICATION = "auction_system.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("POSTGRES_DB", "auction_db"),
+        "USER": os.environ.get("POSTGRES_USER", "auction_user"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+        "HOST": os.environ.get("POSTGRES_HOST", "db"),
+        "PORT": "5432",
     }
 }
 

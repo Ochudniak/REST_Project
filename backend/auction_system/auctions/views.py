@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db import transaction
 
 from .models import Auction, Bid
 from .serializers import AuctionSerializer, BidSerializer
@@ -67,8 +68,12 @@ class BidListCreateView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @transaction.atomic
     def post(self, request, auction_id):
-        auction = get_object_or_404(Auction, id=auction_id)
+        auction = get_object_or_404(
+            Auction.objects.select_for_update(), 
+            id=auction_id
+        )
 
         auction.update_status()
 
