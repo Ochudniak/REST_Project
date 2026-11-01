@@ -229,3 +229,30 @@ class BiddingTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_first_bid_equals_starting_price(self):
+        data = {"amount": "100.00"}
+
+        response = self.client.post(
+            f"/api/auctions/{self.auction.id}/bids/", data, format="json"
+        )
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Bid.objects.filter(auction = self.auction).count(), 1)
+
+    def test_duplicate_bid_rejection(self):
+        data = {"amount": "100.00"}
+
+        response = self.client.post(
+            f"/api/auctions/{self.auction.id}/bids/", data, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.post(
+            f"/api/auctions/{self.auction.id}/bids/", data, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+
+
+
