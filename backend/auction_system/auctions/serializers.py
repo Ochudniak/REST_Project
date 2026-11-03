@@ -1,7 +1,5 @@
 from rest_framework import serializers
-
 from .models import Auction, Bid
-
 
 # Serializer zmienia model Auction na JSON i odwrotnie
 class AuctionSerializer(serializers.ModelSerializer):

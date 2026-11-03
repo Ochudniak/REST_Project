@@ -113,3 +113,5 @@ class BidListCreateView(APIView):
         auction.save(update_fields=["current_price"])
 
         return Response(BidSerializer(bid).data, status=status.HTTP_201_CREATED)
+
+

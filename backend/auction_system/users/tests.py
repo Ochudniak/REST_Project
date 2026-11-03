@@ -1,8 +1,77 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
+from django.contrib.auth import get_user_model
 
-from .models import User
+User = get_user_model()
 
+class RegistrationTests(APITestCase):
+
+    def test_register_user(self):
+        data = {
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "MocneHaslo123!"
+        }
+
+        response = self.client.post(
+            "/api/register/",
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
+
+        user = User.objects.get(username="testuser")
+
+        self.assertNotEqual(
+            user.password,
+            "MocneHaslo123!"
+        )
+
+        self.assertTrue(
+            user.check_password("MocneHaslo123!")
+        )
+
+class LoginTests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="testlogin",
+            password="MocneHaslo123!"
+        )
+
+    def test_login_correct_password(self):
+        response = self.client.post(
+            "/api/auth/login/",
+            {
+                "username": "testlogin",
+                "password": "MocneHaslo123!"
+            },
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+    def test_login_wrong_password(self):
+        response = self.client.post(
+            "/api/auth/login/",
+            {
+                "username": "testlogin",
+                "password": "ZleHaslo123!"
+            },
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
 
 class UserCreateViewTest(APITestCase):
     def test_create_user(self):
