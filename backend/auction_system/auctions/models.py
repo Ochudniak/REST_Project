@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 
 
 class Auction(models.Model):
@@ -31,8 +32,13 @@ class Auction(models.Model):
     # Data zakończenia
     end_date = models.DateTimeField()
 
-    # Id właściciela
-    owner_id = models.IntegerField()
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="auctions",
+        null=True,
+        blank=True,
+    )
 
     # Status aukcji
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="planned")
